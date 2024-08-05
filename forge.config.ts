@@ -9,14 +9,14 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
 const config: ForgeConfig = {
   packagerConfig: {
-    name: 'ElectronForgeStarterKit',
-    appBundleId: 'com.example.electronforgestarterkit',
+    name: 'Stichting Volgspot - Generative Agents',
+    appBundleId: 'nl.weswecan.volgspot-generative-agents',
     appCategoryType: 'public.app-category.developer-tools',
     asar: true,
 
     // The following suffixes for DPI are also supported:
     // @1x, @1.25x, @1.33x, @1.4x, @1.5x, @1.8x, @2x, @2.5x, @3x, @4x, and @5x.
-    icon: 'src/build-resources/icons/icon.png',
+    icon: './src/build-resources/icons/AppIcon',
   },
   rebuildConfig: {},
   makers: [

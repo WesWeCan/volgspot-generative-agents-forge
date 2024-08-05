@@ -9,7 +9,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
+    "lint": "eslint --ext .ts,.tsx .",
+    "icon": "electron-icon-maker --input=./src/build-resources/icon.png --output=./src/build-resources"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.4.0",
@@ -25,6 +26,7 @@
     "@typescript-eslint/parser": "^8.0.0",
     "@vitejs/plugin-vue": "^5.1.2",
     "electron": "31.3.1",
+    "electron-icon-maker": "^0.0.5",
     "eslint": "^9.8.0",
     "eslint-plugin-import": "^2.25.0",
     "path": "^0.12.7",

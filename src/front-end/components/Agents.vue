@@ -436,7 +436,7 @@ const uploadAgentsToSpark = async () => {
         <div class="control">
             <form @submit.prevent>
                 <input type="number" v-model="numNewAgents" placeholder="Number of Agents">
-                <button @click="() => {createAgents(numNewAgents)}">Create {{ numNewAgents }} Agents</button>
+                <button @click="() => {createAgents()}">Create {{ numNewAgents }} Agents</button>
             </form>
         </div>
 
