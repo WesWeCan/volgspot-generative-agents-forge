@@ -1,4 +1,4 @@
-export const topics = [
+export const importedTopics : string[] = [
     
         
 ]

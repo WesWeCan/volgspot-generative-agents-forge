@@ -5,6 +5,9 @@ import { prompts } from "./Prompts";
 import axios from "axios";
 
 import { ComfyClient } from "../ComfyClient";
+import { ArticleData } from "../../types";
+
+import moment from "moment";
 
 
 
@@ -14,13 +17,7 @@ export class GenerativeArticle {
 
     log : string[] = [];
 
-    data : {
-        articleId: string,
-        title: string,
-        content: string,
-        image: boolean,
-        imageUrl: string,
-    }
+    data : ArticleData;
 
     constructor() {
         this.utils = new GenerativeUtils();
@@ -31,10 +28,8 @@ export class GenerativeArticle {
             content: "",
             image: false,
             imageUrl: "",
+            publishDate: this.getPublishDate(),
         }
-
-
-        // this.generateData();
     }   
 
 
@@ -64,13 +59,38 @@ export class GenerativeArticle {
         });
     }
 
-    async loadData(data : any) {
+    async loadData(data : ArticleData) {
         // console.log("Loading data: ", data);
         this.data.articleId = data.articleId;
         this.data.title = data.title;
         this.data.content = data.content;
         this.data.image = data.image;
         this.data.imageUrl = data.imageUrl;
+
+        if(data.publishDate) {
+            this.data.publishDate = data.publishDate;
+        }
+        else {
+            this.data.publishDate = this.getPublishDate();
+            this.saveData();
+        }
+
+    }
+
+
+    getPublishDate = () => {
+
+        let from = moment('2024-08-01');
+        let to = moment('2025-03-15');
+    
+        let randomDate = from.add(Math.floor(Math.random() * (to.diff(from, 'days'))), 'days');
+    
+        // set random time
+        randomDate.hour(Math.floor(Math.random() * 24));
+        randomDate.minute(Math.floor(Math.random() * 60));
+    
+        // format for laravel carbon
+        return randomDate.format('YYYY-MM-DD HH:mm:ss');
     }
 
     async generateData() {
@@ -162,7 +182,7 @@ export class GenerativeArticle {
         }
 
 
-        return topicsJson;
+        return topicsJson as string[];
 
     }
 

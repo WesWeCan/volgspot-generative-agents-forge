@@ -63,7 +63,7 @@ export const preloadSparkAPI = () => {
 
         saveArticle: (data: any) => ipcRenderer.invoke('saveArticle', data),
 
-        saveImage: (data: any) => ipcRenderer.invoke('saveArticleImage', data),
+        saveArticleImage: (data: any) => ipcRenderer.invoke('saveArticleImage', data),
 
         // Social Posts
         loadSocialPosts: () => ipcRenderer.invoke('loadSocialPosts'),

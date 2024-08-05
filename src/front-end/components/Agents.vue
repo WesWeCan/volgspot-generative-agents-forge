@@ -68,7 +68,7 @@ const createAgent = async () => {
 
 
 const createAgentsProgress = ref(0);
-const createAgents = async (numAgents : number | undefined = 1) => {
+const createAgents = async () => {
 
     if(creatingAgents.value) {
         console.log("Already creating agents");
@@ -76,10 +76,6 @@ const createAgents = async (numAgents : number | undefined = 1) => {
     }
 
     creatingAgents.value = true;
-
-    if(numAgents !== undefined) {
-        numNewAgents.value = numAgents;
-    }
 
     for (let i = 0; i < numNewAgents.value; i++) {
         await createAgent();

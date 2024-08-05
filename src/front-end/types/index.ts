@@ -15,3 +15,12 @@ export interface SocialPost {
 
     reactions: SocialPost[]
 }
+
+export interface ArticleData {
+    articleId: string,
+    title: string,
+    content: string,
+    image: boolean,
+    imageUrl: string,
+    publishDate?: string,
+}

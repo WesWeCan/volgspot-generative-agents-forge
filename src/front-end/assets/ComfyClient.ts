@@ -133,6 +133,8 @@ export class ComfyClient {
                             // document.body.appendChild(imageElement);
                         }
                     }
+
+                    alert("ComfyUI is done executing");
                 }
 
                 break;

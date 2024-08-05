@@ -24,6 +24,7 @@ const createWindow = () => {
     width: 900,
     height: 600,
     webPreferences: {
+      webSecurity: false, // TODO: Fix later
       preload: path.join(__dirname, 'preload.js'),
     },
   });
@@ -50,16 +51,17 @@ const createWindow = () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        // 'Content-Security-Policy': [
-        //   "default-src 'self' data: 'unsafe-eval'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data: connect-src '*''unsave-eval' "
-        // ]
-      }
-    })
-  })
+  // session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+  //   callback({
+  //     responseHeaders: {
+  //       ...details.responseHeaders,
+  //       // 'Content-Security-Policy': [
+  //       //   "default-src 'self' data: 'unsafe-eval'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data: connect-src '*''unsave-eval' "
+  //       // ]
+  //       'Access-Control-Allow-Origin': '*'
+  //     }
+  //   })
+  // })
   
   createWindow();
 
