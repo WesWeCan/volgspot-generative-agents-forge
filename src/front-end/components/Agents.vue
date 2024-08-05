@@ -14,6 +14,9 @@ const apiUrl = inject<Ref<string>>("apiUrl");
 
 const socialPosts = ref<SocialPost[]>([]);
 
+const numNewAgents = ref(5);
+const creatingAgents = ref(false);
+
 
 onMounted(async () => {
     await loadAgentsData();
@@ -21,13 +24,13 @@ onMounted(async () => {
 
     console.log(apiUrl.value);
 
-    await uploadAgentsToSpark();
+    
 
     // for(let i = 0; i < agents.value.length; i++) {
     //    await agents.value[i].generateProfilePicture();
     // }
 
-    
+
 
 
     // for (const agent of customUsers.value) {
@@ -37,7 +40,7 @@ onMounted(async () => {
     //     sparkUser.saveData();
     //     agents.value.push(sparkUser);
 
-        
+
     // }
 
     await loadSocialPosts();
@@ -45,30 +48,46 @@ onMounted(async () => {
 
     // uploadAgentsToSpark();
     // uploadPostsToSpark();
-   
+
 });
 
 
 
-const createAgent = async() => {
+const createAgent = async () => {
     let agent = new SparkUser();
+    await agent.generateData();
     agents.value.push(agent);
+    await agent.saveData();
+
+
+    return new Promise((resolve) => {
+        resolve(true);
+    });
+
 }
 
-const createAgents = async () => {
-    for (let i = 0; i < 400; i++) {
-        let agent = new SparkUser();
-        await agent.generateData();
-        agents.value.push(agent);
-        await agent.saveData();
 
+const createAgentsProgress = ref(0);
+const createAgents = async (numAgents : number | undefined = 1) => {
+
+    if(creatingAgents.value) {
+        console.log("Already creating agents");
+        return;
+    }
+
+    creatingAgents.value = true;
+
+    if(numAgents !== undefined) {
+        numNewAgents.value = numAgents;
+    }
+
+    for (let i = 0; i < numNewAgents.value; i++) {
+        await createAgent();
+        createAgentsProgress.value = Math.floor(i / numNewAgents.value * 100);
     }
 }
 
 
-const openAgentsFolder = () => {
-    window.sparkAPI.openDataFolderInExplorer();
-}
 
 
 const loadAgentsData = async () => {
@@ -78,7 +97,7 @@ const loadAgentsData = async () => {
         console.log("Agents data: ", response);
 
         // sort on name
-        response.sort((a : any, b : any) => a.name.localeCompare(b.name));
+        response.sort((a: any, b: any) => a.name.localeCompare(b.name));
 
         for (const agent of response) {
 
@@ -94,18 +113,27 @@ const loadAgentsData = async () => {
 
 }
 
-
+const profilePictureProgress = ref(0);
 const createProfilePictures = async () => {
+
+    profilePictureProgress.value = 0;
+
     for (let i = 0; i < agents.value.length; i++) {
-        if(agents.value[i].data.profilePicture === false) {
+        if (agents.value[i].data.profilePicture === false) {
             console.log("No profile picture for agent " + i + " of " + agents.value.length);
             await agents.value[i].generateProfilePicture();
-            
         }
+        else {
+            console.log("Profile picture for agent " + (i+1) + " of " + agents.value.length + " already exists");
+        }
+
+        profilePictureProgress.value = Math.floor(i / agents.value.length * 100);
 
         // await agents.value[i].generateProfilePicture();
         // console.log("Created profile picture for agent " + i + " of " + agents.value.length);
     }
+
+    profilePictureProgress.value = 100;
 }
 
 
@@ -120,15 +148,17 @@ const loadSocialPosts = async () => {
 }
 
 
-
+const uploadPostProgress = ref(0);
 
 const uploadPostsToSpark = async () => {
 
+    uploadPostProgress.value = 0;
+
     for (let i = 0; i < socialPosts.value.length; i++) {
-        
+
         let post = socialPosts.value[i];
 
-        console.log("Post: ", post); 
+        console.log("Post: ", post);
 
         await uploadPostToSpark(post);
 
@@ -138,10 +168,12 @@ const uploadPostsToSpark = async () => {
 
 
 
-        console.log("Uploaded post " + i + " of " + socialPosts.value.length);
-        
+        uploadPostProgress.value = Math.floor(i / socialPosts.value.length * 100);  
+
 
     }
+
+    uploadPostProgress.value = 100;
 
 }
 
@@ -149,24 +181,24 @@ const uploadPostsToSpark = async () => {
 const uploadPostToSpark = async (post: SocialPost) => {
     const formData = new FormData();
 
-formData.append("post_id", post.postId);
-formData.append("agent_id", post.agentId);
-formData.append("topic", post.topic);
-formData.append("content", post.content);
-formData.append("published_at", post.publishDate);
-formData.append("reacting_to", post.reactingTo || "");
+    formData.append("post_id", post.postId);
+    formData.append("agent_id", post.agentId);
+    formData.append("topic", post.topic);
+    formData.append("content", post.content);
+    formData.append("published_at", post.publishDate);
+    formData.append("reacting_to", post.reactingTo || "");
 
-await axios.request({
-    url: `${apiUrl.value}/post-store`,
-    data: formData,
-    method: "POST",
-    headers: { 
-        "Content-Type": "multipart/form-data"
-    },
-    onUploadProgress: (progressEvent) => {
-        console.log("Upload progress: ", progressEvent.loaded, progressEvent.total);
-    }
-})
+    await axios.request({
+        url: `${apiUrl.value}/post-store`,
+        data: formData,
+        method: "POST",
+        headers: {
+            "Content-Type": "multipart/form-data"
+        },
+        onUploadProgress: (progressEvent) => {
+            console.log("Upload progress: ", progressEvent.loaded, progressEvent.total);
+        }
+    })
 
 
     return new Promise((resolve) => {
@@ -211,11 +243,16 @@ const getReactionDate = (publishDate: string) => {
 
 
 
-const generatePosts = async () => {
+const postsGenerationProgress = ref(0);
+const postCurrentGenerationProgress = ref(0);
 
-    
+const createPostsForAgents = async () => {
+
+    postsGenerationProgress.value = 0;
+    postCurrentGenerationProgress.value = 0;
+
     for (let i = 0; i < agents.value.length; i++) {
-      
+
 
         let agent = agents.value[i];
 
@@ -225,7 +262,7 @@ const generatePosts = async () => {
             console.log("Agent " + agent.data.userName + " already has a post");
             continue;
         }
-        
+
         let topics = await agent.brainstormTopics();
 
         console.log("Topics: ", topics);
@@ -252,7 +289,7 @@ const generatePosts = async () => {
 
             console.log("Post: ", postContent);
 
-            let newPost : SocialPost = {
+            let newPost: SocialPost = {
                 postId: agent.data.memoryId + "_" + Math.floor(Math.random() * 10000),
                 agentId: agent.data.memoryId,
                 topic: topic,
@@ -261,8 +298,6 @@ const generatePosts = async () => {
                 reactions: []
             }
 
-
-
             // random between 1 and 15
             const numReactions = Math.floor(Math.random() * 7) || 1;
             console.log("Number of reactions to post: ", numReactions);
@@ -270,12 +305,12 @@ const generatePosts = async () => {
             // pick random agents based on the number of reactions
             for (let k = 0; k < numReactions; k++) {
                 let reactionAgent = agents.value[Math.floor(Math.random() * agents.value.length)];
-                
+
                 let context = "A post on social media about " + topic;
                 let reactionContent = await reactionAgent.react(context, postContent);
                 console.log("Reaction: ", reactionContent);
 
-                let newReaction : SocialPost = {
+                let newReaction: SocialPost = {
                     postId: reactionAgent.data.memoryId + "_" + Math.floor(Math.random() * 10000),
                     agentId: reactionAgent.data.memoryId,
                     topic: topic,
@@ -287,48 +322,56 @@ const generatePosts = async () => {
 
                 newPost.reactions.push(newReaction);
                 console.log("Reaction " + k + " from agent " + reactionAgent.data.userName + "of " + numReactions);
+
+                postCurrentGenerationProgress.value = Math.floor(k / numReactions * 100);
             }
+
+
 
             console.log("Saving post: ", newPost);
 
             await window.sparkAPI.saveSocialPost(newPost);
 
+            
         }
 
         console.log("Generated posts for agent " + i + " of " + agents.value.length);
-        
 
+        postsGenerationProgress.value = Math.floor(i / agents.value.length * 100);
 
     }
 
+    postsGenerationProgress.value = 100;
+    postCurrentGenerationProgress.value = 0;
 
 
 }
 
 
 
-
+const uploadProgress = ref(0);
 
 const uploadAgentsToSpark = async () => {
 
+    uploadProgress.value = 0;
+
     for (let i = 0; i < agents.value.length; i++) {
-        
+
         let imageUrl = "";
-        
-    
+
+
         imageUrl = await window.sparkAPI.loadAgentProfilePicture(agents.value[i].data.memoryId).then((response) => {
-            console.log("Agent image loaded: ", response.imageUrl);
+            // console.log("Agent image loaded: ", response.imageUrl);
             return response.imageUrl;
         });
 
-        console.log("Image URL: ", imageUrl);
+   
 
         const formData = new FormData();
 
         let image = new Image();
         image.src = imageUrl;
-        console.log("Image src: ", image.src);
-
+    
         image.onload = async () => {
 
             console.log("Image loaded");
@@ -371,34 +414,69 @@ const uploadAgentsToSpark = async () => {
 
         }
 
+        uploadProgress.value = Math.floor(i / agents.value.length * 100);
+
     }
+
+    uploadProgress.value = 100;
 
 
 }
-
-
-
-
-
-
-
-
-
-
 
 </script>
 
 
 <template>
 
-<h1>Generative Agents</h1>
+    <h1>Generative Agents</h1>
 
-{{ apiUrl }}
+    <details>
+        <summary>Controls</summary>
 
-<button @click="openAgentsFolder()" >
-      Naar agents map
-    </button>
+    <div class="controls">
 
+        
+       
+        <div class="control">
+            <form @submit.prevent>
+                <input type="number" v-model="numNewAgents" placeholder="Number of Agents">
+                <button @click="() => {createAgents(numNewAgents)}">Create {{ numNewAgents }} Agents</button>
+            </form>
+        </div>
+
+        <div class="control">
+            <button @click="createProfilePictures">Create Profile Pictures</button>
+            <progress max="100" v-if="profilePictureProgress !== 0" :value="profilePictureProgress"></progress>
+        </div>
+
+        <div class="control">
+            <button @click="uploadAgentsToSpark">Upload Agents to Spark</button>
+            <progress max="100" v-if="uploadProgress !== 0" :value="uploadProgress"></progress>
+        </div>
+
+
+        <hr>
+
+        <div class="control">
+            <button @click="createPostsForAgents">Create Posts for Agents</button>
+            
+            <progress max="100" v-if="postCurrentGenerationProgress !== 0" :value="postCurrentGenerationProgress"></progress>
+            <progress max="100" v-if="postsGenerationProgress !== 0" :value="postsGenerationProgress"></progress>
+   
+        </div>
+
+        <div class="control">
+            <button @click="uploadPostsToSpark">Upload Posts to Spark</button>
+            <progress max="100" v-if="uploadPostProgress !== 0" :value="uploadPostProgress"></progress>
+        </div>
+        
+
+    </div>
+    </details>
+
+
+    <details>
+        <summary>Generated Agents</summary>
     <div v-for="(agent, index) in agents">
 
 
@@ -418,25 +496,14 @@ const uploadAgentsToSpark = async () => {
                     </ul>
                 </details>
 
-                <button @click="() => {agent.generateData()}">Generate Data</button>
-
-            <button @click="() => {agent.writePost()}">Write Post</button>
-
-            <!-- <button @click="() => {agent.react()}">React</button> -->
-
-            <button @click="() => {agent.brainstormTopics()}">Brainstorm Topics</button>
-
-            <button @click="() => {agent.saveData()}">Save Data</button>
-
+               
             </div>
         </details>
 
 
-       
+
     </div>
-   
-    <br>
-    <button @click="createAgent">Create Agent</button>
-    <button @click="createAgents">Create 400 Agents</button>
+
+    </details>
 
 </template>

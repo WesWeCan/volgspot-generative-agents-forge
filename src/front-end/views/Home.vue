@@ -11,9 +11,10 @@ import Articles from '../components/Articles.vue';
 </script>
 
 <template>
-  <!-- <Articles></Articles> -->
-
-
+  
   <Agents></Agents> 
+
+
+  <Articles></Articles>
 </template>
 
